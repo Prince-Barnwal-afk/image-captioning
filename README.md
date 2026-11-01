@@ -216,3 +216,12 @@ The first run downloads and loads the model. CPU inference may also take time.
 - Hugging Face Transformers: https://huggingface.co/docs/transformers
 - Streamlit documentation: https://docs.streamlit.io/
 - Flickr8k dataset: https://www.kaggle.com/datasets/adityajn105/flickr8k
+
+
+## Live Demo
+
+Try the deployed application here:
+
+**[Image Captioning with BLIP](https://image-captioninggit-jjsmemeek7wc33n9g8gkwcv.streamlit.app/)**
+
+Upload a JPG, JPEG, or PNG image to generate an English caption using the pretrained BLIP model.
