@@ -7,8 +7,10 @@ A deep-learning application that generates natural-language captions for uploade
 - Upload images in JPG, JPEG, or PNG format.
 - Generate English captions using a pretrained BLIP model.
 - Display the uploaded image and its generated caption.
-- Automatically select CUDA when available; otherwise, use the CPU.
-- Cache the loaded model while the Streamlit application is running.
+- Automatically use CUDA when available; otherwise, use the CPU.
+- Cache the loaded model during the Streamlit session.
+- Evaluate generated captions against human-written reference captions from Flickr8k.
+- Calculate BLEU-4 scores for quantitative evaluation.
 
 ## Technology Stack
 
@@ -18,12 +20,19 @@ A deep-learning application that generates natural-language captions for uploade
 - Salesforce BLIP Image Captioning Base
 - Pillow
 - Streamlit
+- NLTK for BLEU evaluation
 
 ## Project Structure
 
 ```text
 image-captioning/
 ├── app.py
+├── check_dataset.py
+├── evaluate_model.py
+├── calculate_metrics.py
+├── evaluation_results.json
+├── evaluation_summary.md
+├── test_results.md
 ├── requirements.txt
 ├── README.md
 └── .gitignore
@@ -31,24 +40,22 @@ image-captioning/
 
 ## Prerequisites
 
-- Python 3.10 or a compatible newer Python version supported by the dependencies.
+- Python 3.10 or a compatible newer version supported by the dependencies.
 - Git
-- An internet connection for installing dependencies and downloading the pretrained model on the first run.
+- An internet connection for installing dependencies and downloading the pretrained model.
 
 ## Installation and Setup
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/image-captioning.git
+git clone https://github.com/Prince-Barnwal-afk/image-captioning.git
 cd image-captioning
 ```
 
-Replace `YOUR_USERNAME` with your GitHub username.
-
 ### 2. Create a virtual environment
 
-**Windows PowerShell:**
+On Windows PowerShell:
 
 ```powershell
 python -m venv .venv
@@ -60,7 +67,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-If PowerShell blocks activation, use Command Prompt instead:
+If PowerShell blocks activation, use Command Prompt:
 
 ```bat
 .venv\Scripts\activate.bat
@@ -73,44 +80,94 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-PyTorch may use the CPU or a compatible CUDA GPU, depending on the installed build and available hardware.
-
 ### 5. Run the application
 
 ```powershell
 python -m streamlit run app.py
 ```
 
-Open the local URL printed in the terminal, usually:
+Open the local URL shown in the terminal, usually:
 
-```text
 http://localhost:8501
-```
 
-## Downloading the Pretrained Model
+## Pretrained Model
 
 The application uses:
 
 `Salesforce/blip-image-captioning-base`
 
-The model and processor are downloaded automatically through Hugging Face Transformers when the application first loads them. An internet connection is required for the initial download. The downloaded files are cached locally for subsequent runs.
+Hugging Face Transformers downloads the model and processor automatically when they are first loaded. The files are cached locally for subsequent runs. Do not commit model weights to the Git repository.
 
-The model does not need to be downloaded manually or committed to this Git repository.
+Model card: https://huggingface.co/Salesforce/blip-image-captioning-base
 
-## How to Use
+## How to Use the Application
 
 1. Start the Streamlit application.
 2. Upload a JPG, JPEG, or PNG image.
 3. Click **Generate Caption**.
-4. Wait for inference to finish.
-5. Read the generated caption displayed on the page.
+4. Wait for the model to generate a caption.
+5. Read the caption displayed on the page.
 
-## Performance Notes
+## Dataset-Based Evaluation
 
-- The first run may take longer because the pretrained model must be downloaded and loaded.
-- CPU inference can be slower than inference on a compatible GPU.
-- The application caches the loaded model while the Streamlit process remains active.
-- Generated captions may omit details or incorrectly describe an image.
+The project uses the Flickr8k dataset to compare generated captions with human-written reference captions.
+
+The dataset is stored locally and is not included in this repository.
+
+Expected dataset structure:
+
+```text
+archive/
+├── Images/
+└── captions.txt
+```
+
+The evaluation scripts currently expect the dataset at:
+
+`D:\DeepLearning\archive`
+
+If the dataset is stored elsewhere, update `DATASET_DIR` in `check_dataset.py`, `evaluate_model.py`, and `calculate_metrics.py` as applicable.
+
+### Evaluation Workflow
+
+1. Run `check_dataset.py` to verify the dataset files and image-caption mappings.
+2. Run `evaluate_model.py` to generate captions for the selected images and save the results to `evaluation_results.json`.
+3. Run `calculate_metrics.py` to calculate BLEU-4 scores against the reference captions.
+
+Run these commands from the project directory:
+
+```powershell
+python check_dataset.py
+python evaluate_model.py
+python calculate_metrics.py
+```
+
+The evaluation scripts require the Flickr8k dataset to be downloaded and configured locally.
+
+## Initial Evaluation Results
+
+The following results were obtained during the initial evaluation:
+
+| Metric | Result |
+|---|---:|
+| Images evaluated | 100 |
+| Captions generated | 100 |
+| Generation errors | 0 |
+| Corpus BLEU-4 | 0.1931 |
+
+The model generated captions for all 100 selected images without reported errors. The BLEU-4 score measures n-gram overlap between generated captions and human-written references. It is not a percentage accuracy score.
+
+These results are preliminary and apply only to the selected 100-image subset. A larger evaluation and manual review are needed to assess caption quality more comprehensively.
+
+See `evaluation_summary.md` for the evaluation details and `evaluation_results.json` for the generated captions and saved results.
+
+## Limitations
+
+- Captions may omit important objects or visual details.
+- The model may describe objects or actions incorrectly.
+- BLEU-4 does not fully measure semantic correctness or factual accuracy.
+- The reported evaluation uses only 100 images.
+- CPU inference may be slower than inference on a compatible GPU.
 
 ## Troubleshooting
 
@@ -125,34 +182,37 @@ python -m pip --version
 
 ### Streamlit cannot find `app.py`
 
-Ensure the terminal is inside the project directory:
+Ensure the terminal is inside the project directory and that `app.py` is listed:
 
 ```powershell
 cd path\to\image-captioning
 dir
 ```
 
-Confirm that `app.py` is listed, then run the Streamlit command again.
-
 ### Model download fails
 
-Check your internet connection and rerun the application. The initial model download requires access to Hugging Face.
+Check your internet connection and try again. The initial download requires access to Hugging Face.
+
+### Dataset files cannot be found
+
+Check that the `Images` folder and `captions.txt` file exist at the location configured in the evaluation scripts.
 
 ### The application is slow
 
-CPU-based model inference can take time. Keep the terminal running while using the application.
+The first run downloads and loads the model. CPU inference may also take time.
 
-## Current Project Status
+## Project Status
 
-The basic Streamlit interface and pretrained BLIP caption-generation workflow have been implemented and tested locally. Dataset-based evaluation, quantitative performance analysis, and online deployment are separate project milestones.
+- Streamlit application implemented and tested locally.
+- Initial manual testing completed on five images.
+- Flickr8k dataset configured locally.
+- Automated caption generation completed for 100 images.
+- BLEU-4 evaluation completed for the 100-image subset.
+- Public deployment and broader evaluation remain future milestones.
 
-## License and Attribution
+## References
 
-This project uses the pretrained BLIP model provided by Salesforce through Hugging Face Transformers. Check the model card and applicable licenses before redistributing model files or deploying the application commercially.
-
-Model: https://huggingface.co/Salesforce/blip-image-captioning-base
-
-Transformers: https://huggingface.co/docs/transformers
-
-Streamlit: https://docs.streamlit.io/
-(Get-Item .\README.md).Length
+- BLIP model: https://huggingface.co/Salesforce/blip-image-captioning-base
+- Hugging Face Transformers: https://huggingface.co/docs/transformers
+- Streamlit documentation: https://docs.streamlit.io/
+- Flickr8k dataset: https://www.kaggle.com/datasets/adityajn105/flickr8k
